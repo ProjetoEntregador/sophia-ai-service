@@ -4,4 +4,8 @@ services:
       context: .
     container_name: sophia-ai-service
     env_file:
-      - .env.example
+      - .env
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
