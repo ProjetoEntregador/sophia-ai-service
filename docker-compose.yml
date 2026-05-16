@@ -1,5 +1,5 @@
 services:
-  app:
+  sophia-ai-service:
     build:
       context: .
     container_name: sophia-ai-service
