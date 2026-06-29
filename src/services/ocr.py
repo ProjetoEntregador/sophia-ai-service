@@ -1,16 +1,15 @@
 import json
 import re
 import base64
-from groq import Groq
 from ..prompts import get_ocr_prompt
 
 class OCRService:
     def __init__(
             self,
-            api_key,
+            client,
             model="meta-llama/llama-4-scout-17b-16e-instruct"
         ):
-        self.client = Groq(api_key=api_key)
+        self.client = client
         self.model = model
 
     @staticmethod

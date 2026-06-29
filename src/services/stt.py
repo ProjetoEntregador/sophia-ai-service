@@ -1,15 +1,14 @@
-from groq import Groq
 from io import BytesIO
 
 class SpeechToText:
     def __init__(
             self,
-            api_key,
+            client,
             temperature=0,
             model="whisper-large-v3",
             response_format="verbose_json"
         ):
-        self.client = Groq(api_key=api_key)
+        self.client = client
         self.model = model
         self.temperature = temperature
         self.response_format = response_format
