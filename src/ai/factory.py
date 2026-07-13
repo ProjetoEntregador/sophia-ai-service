@@ -24,16 +24,6 @@ class AIClientFactory:
     def build_chat_providers(self):
         providers = []
 
-        gemini_key = self._env.get("GEMINI_API_KEY")
-        if gemini_key:
-            providers.append(
-                OpenAICompatProvider(
-                    name="gemini",
-                    client=self.gemini_client(gemini_key),
-                    model=self._env.get("GEMINI_MODEL", "gemini-2.5-flash"),
-                )
-            )
-
         groq_key = self._env.get("GROQ_API_KEY") or self._env.get("CHAT_API_KEY")
         if groq_key:
             providers.append(
@@ -41,6 +31,17 @@ class AIClientFactory:
                     name="groq",
                     client=self.groq_client(groq_key),
                     model=self._env.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                )
+            )
+
+
+        gemini_key = self._env.get("GEMINI_API_KEY")
+        if gemini_key:
+            providers.append(
+                OpenAICompatProvider(
+                    name="gemini",
+                    client=self.gemini_client(gemini_key),
+                    model=self._env.get("GEMINI_MODEL", "gemini-2.5-flash"),
                 )
             )
 
