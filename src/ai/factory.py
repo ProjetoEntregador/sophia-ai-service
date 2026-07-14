@@ -1,14 +1,12 @@
 import os
 
 from groq import Groq
-from openai import OpenAI
 
+from .gemini_native import GeminiNativeProvider
 from .openai_compat import OpenAICompatProvider
 
 
 class AIClientFactory:
-    GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-
     def __init__(self, env=None):
         self._env = env if env is not None else os.environ
         self._groq_clients = {}
@@ -18,19 +16,16 @@ class AIClientFactory:
             self._groq_clients[api_key] = Groq(api_key=api_key)
         return self._groq_clients[api_key]
 
-    def gemini_client(self, api_key):
-        return OpenAI(api_key=api_key, base_url=self.GEMINI_BASE_URL)
-
     def build_chat_providers(self):
         providers = []
 
         gemini_key = self._env.get("GEMINI_API_KEY")
         if gemini_key:
             providers.append(
-                OpenAICompatProvider(
+                GeminiNativeProvider(
                     name="gemini",
-                    client=self.gemini_client(gemini_key),
-                    model=self._env.get("GEMINI_MODEL", "gemini-2.5-flash"),
+                    api_key=gemini_key,
+                    model=self._env.get("GEMINI_MODEL", "gemini-3.5-flash"),
                 )
             )
 

@@ -13,11 +13,11 @@ quebrar a conversa.
 
 ## Funcionalidades
 
-| Recurso | Descrição | Modelo padrão |
-|---|---|---|
-| **Chat** | Conversa com suporte a *tool calling*, com fallback entre provedores | `gemini-2.5-flash` → `llama-3.3-70b-versatile` (Groq) |
-| **STT** | Transcrição de áudio para texto (português) | `whisper-large-v3` (Groq) |
-| **OCR** | Extração estruturada de medicamentos de receitas (visão) | `llama-4-scout-17b` (Groq) |
+| Recurso  | Descrição                                                                      | Modelo padrão                                         |
+| -------- | ------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| **Chat** | Conversa com suporte a _tool calling_ no Groq e fallback para Gemini sem tools | `gemini-3.5-flash` → `llama-3.3-70b-versatile` (Groq) |
+| **STT**  | Transcrição de áudio para texto (português)                                    | `whisper-large-v3` (Groq)                             |
+| **OCR**  | Extração estruturada de medicamentos de receitas (visão)                       | `llama-4-scout-17b` (Groq)                            |
 
 ---
 
@@ -57,13 +57,13 @@ src/
 └── prompts.py               # Prompts do OCR
 ```
 
-| Padrão | Onde | Papel |
-|---|---|---|
-| **Strategy** | `ChatProvider` | Contrato comum; provedores intercambiáveis |
-| **Adapter** | `OpenAICompatProvider` | Adapta clientes Groq/Gemini ao contrato |
-| **Factory** | `AIClientFactory` | Centraliza criação de clientes (cacheados) e da cadeia |
-| **Chain of Responsibility** | `ChatService` | Tenta provedores em ordem até um responder |
-| **Dependency Injection** | `create_app` | Monta e injeta clientes/serviços |
+| Padrão                      | Onde                   | Papel                                                  |
+| --------------------------- | ---------------------- | ------------------------------------------------------ |
+| **Strategy**                | `ChatProvider`         | Contrato comum; provedores intercambiáveis             |
+| **Adapter**                 | `OpenAICompatProvider` | Adapta clientes Groq/Gemini ao contrato                |
+| **Factory**                 | `AIClientFactory`      | Centraliza criação de clientes (cacheados) e da cadeia |
+| **Chain of Responsibility** | `ChatService`          | Tenta provedores em ordem até um responder             |
+| **Dependency Injection**    | `create_app`           | Monta e injeta clientes/serviços                       |
 
 ---
 
@@ -85,18 +85,19 @@ cp .env.example .env
 
 Variáveis (`.env`):
 
-| Variável | Obrigatória | Descrição |
-|---|---|---|
-| `CHAT_API_KEY` | sim | Chave da Groq usada por chat/STT/OCR (alias: `GROQ_API_KEY`) |
-| `STT_API_KEY` | sim | Chave da Groq para transcrição |
-| `OCR_API_KEY` | sim | Chave da Groq para OCR |
-| `GROQ_MODEL` | não | Modelo de chat do Groq (padrão `llama-3.3-70b-versatile`) |
-| `GEMINI_API_KEY` | não* | Chave do Gemini (ativa o fallback de chat) |
-| `GEMINI_MODEL` | não | Modelo do Gemini (padrão `gemini-2.5-flash`) |
-| `PORT` | não | Porta do serviço (padrão `5000`) |
+| Variável         | Obrigatória | Descrição                                                    |
+| ---------------- | ----------- | ------------------------------------------------------------ |
+| `CHAT_API_KEY`   | sim         | Chave da Groq usada por chat/STT/OCR (alias: `GROQ_API_KEY`) |
+| `STT_API_KEY`    | sim         | Chave da Groq para transcrição                               |
+| `OCR_API_KEY`    | sim         | Chave da Groq para OCR                                       |
+| `GROQ_MODEL`     | não         | Modelo de chat do Groq (padrão `llama-3.3-70b-versatile`)    |
+| `GEMINI_API_KEY` | não\*       | Chave do Gemini (ativa o fallback de chat)                   |
+| `GEMINI_MODEL`   | não         | Modelo do Gemini (padrão `gemini-3.5-flash`)                 |
+| `AI_PORT`        | não         | Porta do serviço (padrão `5000`)                             |
 
 \* Sem `GEMINI_API_KEY` o serviço funciona só com o provedor que tiver chave.
-A ordem de prioridade do chat é **Gemini → Groq**.
+Para requisições com `tools`, o serviço usa o provedor compatível com tool calling.
+Para chats sem `tools`, a ordem de prioridade é **Gemini → Groq**.
 
 ---
 
@@ -136,21 +137,23 @@ python main.py
 Base URL: `http://localhost:5000`
 
 ### `GET /ai/health`
+
 Healthcheck.
+
 ```json
 { "status": "ok" }
 ```
 
 ### `POST /chat/completions`
-Chat com suporte opcional a *tool calling*.
+
+Chat com suporte opcional a _tool calling_.
 
 **Request**
+
 ```json
 {
   "systemPrompt": "Você é a Sophia, assistente da farmácia.",
-  "messages": [
-    { "role": "user", "content": "Vocês têm dipirona?" }
-  ],
+  "messages": [{ "role": "user", "content": "Vocês têm dipirona?" }],
   "tools": [
     {
       "definition": {
@@ -168,16 +171,22 @@ Chat com suporte opcional a *tool calling*.
 ```
 
 **Response**
+
 ```json
 {
   "text": "Deixa eu verificar...",
   "toolCalls": [
-    { "toolUseId": "call_abc", "name": "buscar_produto", "args": { "nome": "dipirona" } }
+    {
+      "toolUseId": "call_abc",
+      "name": "buscar_produto",
+      "args": { "nome": "dipirona" }
+    }
   ]
 }
 ```
 
 Exemplo com `curl`:
+
 ```bash
 curl -X POST http://localhost:5000/chat/completions \
   -H "Content-Type: application/json" \
@@ -185,21 +194,27 @@ curl -X POST http://localhost:5000/chat/completions \
 ```
 
 ### `POST /stt/transcribe`
+
 Transcreve um arquivo de áudio (multipart `file`).
+
 ```bash
 curl -X POST http://localhost:5000/stt/transcribe -F "file=@audio.ogg"
 ```
+
 ```json
 { "text": "texto transcrito" }
 ```
 
 ### `POST /ocr/read`
+
 Extrai medicamentos de uma imagem de receita (multipart `file`).
+
 ```bash
 curl -X POST http://localhost:5000/ocr/read -F "file=@receita.jpg"
 ```
+
 ```json
-{ "medications": [ { "medication_name": "...", "dosage": "...", "...": "..." } ] }
+{ "medications": [{ "medication_name": "...", "dosage": "...", "...": "..." }] }
 ```
 
 ---
